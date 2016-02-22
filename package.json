@@ -1,0 +1,17 @@
+{
+  "name": "cmj",
+  "version": "1.0.0",
+  "description": "Config Manager",
+  "main": "cmj.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "intenter <int@intenter.org> (https://github.com/intenter)",
+  "license": "ISC",
+  "devDependencies": {
+    "chai": "^3.5.0"
+  }
+}
