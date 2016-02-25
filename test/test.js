@@ -7,7 +7,7 @@ describe('Config manager', function(){
   cm.setVars({
     'name': 'NYDC',
     'vars': {
-      'name': 'New York DC',
+      'dcName': 'New York DC',
       'proxy': 'nyproxy.company.org'
     }
   });
@@ -15,7 +15,7 @@ describe('Config manager', function(){
   cm.setVars({
     'name': 'LDNDC',
     'vars': {
-      'name': 'London DC',
+      'dcName': 'London DC',
       'proxy': 'ldnproxy.company.org'
     }
   });
@@ -33,7 +33,7 @@ port={{port}}`,
   
     
   it ('Should return config for the app', function(){
-    var conf = cm.getConfig('App1', ['NYDC']);
+    var conf = cm.getConfig(['App1', 'NYDC']);
     console.log(JSON.stringify(conf, null, 2));
 
     expect(conf).to.exist;

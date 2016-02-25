@@ -35,9 +35,66 @@ ConfigManager.prototype.setVars = function setVars(varsDef){
   this.vars[varsDef.name] = def; 
 };
 
-ConfigManager.prototype.getConfig = function getConfig(appName, tags){
-  var app = this.vars[appName];
-  return app; 
+
+ConfigManager.prototype.collectContext = function collectContext(tags) {
+  var context = {};
+  var self = this;
+  tags.forEach(function(name){
+    console.log(`Collecting ${name}`);
+    var varsSet = self.vars[name].vars;
+    Object.keys(varsSet).forEach(function (variable){
+      var varValue = varsSet[variable];
+      context[variable] = {
+        value: varValue.value,
+        dependsOn: varValue.dependsOn,
+        isTemplate: varValue.isTemplate
+      };
+    });
+  });
+  return context;
+}
+
+function resolveVar(name, context){
+  var curr = context[name];
+  if (!curr.isTemplate) {
+    return curr.value;
+  } else {
+    //check deps
+    curr.dependsOn.forEach(function(depName){
+      var dep = context[depName];
+      if (dep.isTemplate) {
+        dep.value = resolveVar(depName, context);
+        dep.isTemplate = false;
+      }
+    });
+    var template = Handlebars.compile(curr.value);
+    //curr.value = template(context);
+    //curr.isTemplate = false
+    return template(contextValues(context));
+  }
+}
+
+function contextValues(context){
+  var res = {};
+  Object.keys(context).forEach(function (key) {
+    res[key] = context[key].value;
+  });
+  return res;
+}
+
+ConfigManager.prototype.getConfig = function getConfig(tags){
+  var first = this.vars[tags[0]];
+  var res = {name: first.name, vars: {}};
+  var context = this.collectContext(tags);
+  
+  Object.keys(first.vars).forEach(function(name){
+    res.vars[name] = resolveVar(name, context);
+    console.log(JSON.stringify(res.vars[name], null, 2));
+  });
+  
+  //console.log(JSON.stringify(context, null, 2));
+   
+  return res; 
 }
 
 module.exports = new ConfigManager();
