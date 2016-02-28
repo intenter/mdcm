@@ -59,6 +59,7 @@ function resolveVar(name, context){
   if (!curr.isTemplate) {
     return curr.value;
   } else {
+    var intContext = {};
     //check deps
     curr.dependsOn.forEach(function(depName){
       var dep = context[depName];
@@ -66,20 +67,13 @@ function resolveVar(name, context){
         dep.value = resolveVar(depName, context);
         dep.isTemplate = false;
       }
+      intContext[depName] = dep.value;
     });
     var template = Handlebars.compile(curr.value);
     //curr.value = template(context);
     //curr.isTemplate = false
-    return template(contextValues(context));
+    return template(intContext);
   }
-}
-
-function contextValues(context){
-  var res = {};
-  Object.keys(context).forEach(function (key) {
-    res[key] = context[key].value;
-  });
-  return res;
 }
 
 ConfigManager.prototype.getConfig = function getConfig(tags){
