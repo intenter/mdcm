@@ -4,36 +4,28 @@ var expect = require('chai').expect;
 
 
 describe('Config manager', function(){
-  cm.setVars({
-    'name': 'NYDC',
-    'vars': {
-      'dcName': 'New York DC',
-      'proxy': 'nyproxy.company.org'
-    }
-  });
-
-  cm.setVars({
-    'name': 'LDNDC',
-    'vars': {
-      'dcName': 'London DC',
-      'proxy': 'ldnproxy.company.org'
-    }
-  });
-
-  cm.setVars({
-    'name': 'App1',
-    'vars': {
+  cm.setApp('App1', {
       'config.ini': 
       `#This is config file for the App1
 proxy={{proxy}}
 port={{port}}`,
       'port': '8081'
-    }
+    });
+
+  cm.setTag('App1', 'NYDC', {
+      'dcName': 'New York DC',
+      'proxy': 'nyproxy.company.org'
   });
+
+  cm.setTag('App1', 'LDNDC', {
+      'dcName': 'London DC',
+      'proxy': 'ldnproxy.company.org'
+  });
+
   
     
   it ('Should return config for the app', function(){
-    var conf = cm.getConfig(['App1', 'NYDC']);
+    var conf = cm.getConfig('App1', ['NYDC']);
     console.log(JSON.stringify(conf, null, 2));
 
     expect(conf).to.exist;

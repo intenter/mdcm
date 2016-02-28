@@ -14,54 +14,67 @@ NamesScanner.prototype.MustacheStatement = function(statement) {
 
 //Config Manager itself
 function ConfigManager(){
-  this.vars = {};
+  this.apps = {};
 }
 
-ConfigManager.prototype.setVars = function setVars(varsDef){
-  var def = {name: varsDef.name, vars: {}};
-  Object.keys(varsDef.vars).forEach(function (key) {
-    var templateString = varsDef.vars[key];
+ConfigManager.prototype.setApp = function setApp(appName, appProps){
+  //todo: hanle update
+  this.apps[appName] = {name: appName, props: extendProps(appProps), tags: {}};
+}
+
+function extendProps(props){
+  var res = {};
+  Object.keys(props).forEach(function(propName){
+    var templateString = props[propName];
     var ast = Handlebars.parse(templateString);
     var namesScanner = new NamesScanner();
     namesScanner.accept(ast);
-    var varDef = {
-      name: key, 
+    res[propName]= {
       value: templateString, 
       dependsOn: namesScanner.names,
       isTemplate: namesScanner.names.length > 0
       };
-    def.vars[key] = varDef;
+    
   });
-  this.vars[varsDef.name] = def; 
-};
+  return res
+}
 
+ConfigManager.prototype.setTag = function setTag(appName, tagName, tagProps) {
+  var app = this.apps[appName]; //todo: handle no app
+  app.tags[tagName] = extendProps(tagProps);
+}
 
-ConfigManager.prototype.collectContext = function collectContext(tags) {
-  var context = {};
-  var self = this;
-  tags.forEach(function(name){
-    console.log(`Collecting ${name}`);
-    var varsSet = self.vars[name].vars;
-    Object.keys(varsSet).forEach(function (variable){
-      var varValue = varsSet[variable];
+function collectContextProps(context, props) {
+    Object.keys(props).forEach(function (variable){
+      var varValue = props[variable];
       context[variable] = {
         value: varValue.value,
         dependsOn: varValue.dependsOn,
         isTemplate: varValue.isTemplate
       };
     });
+}
+
+ConfigManager.prototype.collectContext = function collectContext(context, appName, tags) {
+  var self = this;
+  tags.forEach(function(name){
+    console.log(`Collecting ${name}`);
+    collectContextProps(context, self.apps[appName].tags[name])
   });
-  return context;
 }
 
 function resolveVar(name, context){
+  console.log(`Resolving var ${name}`);
   var curr = context[name];
   if (!curr.isTemplate) {
+    console.log(`Not a template returning ${curr.value}`);
     return curr.value;
   } else {
     var intContext = {};
     //check deps
+    console.log('Var is a template checking dependencies');
     curr.dependsOn.forEach(function(depName){
+      console.log(`Checking dep ${depName}`);
       var dep = context[depName];
       if (dep.isTemplate) {
         dep.value = resolveVar(depName, context);
@@ -76,12 +89,16 @@ function resolveVar(name, context){
   }
 }
 
-ConfigManager.prototype.getConfig = function getConfig(tags){
-  var first = this.vars[tags[0]];
-  var res = {name: first.name, vars: {}};
-  var context = this.collectContext(tags);
+ConfigManager.prototype.getConfig = function getConfig(appName, tags){
+  var app = this.apps[appName];
+  var res = {name: appName, vars: {}};
+  var context = {};
+  collectContextProps(context, app.props);
+  this.collectContext(context, appName, tags);
+  console.log(JSON.stringify(context, null, 2));
   
-  Object.keys(first.vars).forEach(function(name){
+  Object.keys(app.props).forEach(function(name){
+    context[name] = app.props[name];
     res.vars[name] = resolveVar(name, context);
     console.log(JSON.stringify(res.vars[name], null, 2));
   });
