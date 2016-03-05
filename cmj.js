@@ -39,9 +39,21 @@ function extendProps(props){
   return res
 }
 
+function getNormalizedTagName(tagName) {
+  var normalizedTagName;
+  if (typeof tagName === 'string') {
+    normalizedTagName = tagName;  
+  } else if (Array.isArray(tagName)) {
+    normalizedTagName = tagName.join('+');
+  } else {
+    throw new Error('Unsupported tag name type');
+  } 
+  return normalizedTagName; 
+}
+
 ConfigManager.prototype.setTag = function setTag(appName, tagName, tagProps) {
   var app = this.apps[appName]; //todo: handle no app
-  app.tags[tagName] = extendProps(tagProps);
+  app.tags[getNormalizedTagName(tagName)] = extendProps(tagProps);  
 }
 
 function collectContextProps(context, props) {
@@ -95,6 +107,7 @@ ConfigManager.prototype.getConfig = function getConfig(appName, tags){
   var context = {};
   collectContextProps(context, app.props);
   this.collectContext(context, appName, tags);
+  this.collectContext(context, appName, [getNormalizedTagName(tags)]);
   console.log(JSON.stringify(context, null, 2));
   
   Object.keys(app.props).forEach(function(name){
