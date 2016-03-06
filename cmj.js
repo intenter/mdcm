@@ -126,6 +126,7 @@ ConfigManager.prototype.getConfig = function getConfig(appName, tags){
   });
   
   //console.log(JSON.stringify(context, null, 2));
+  res.fullyResolved = res.unresolvedVars.length === 0;
   return res; 
 }
 
