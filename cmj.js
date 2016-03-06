@@ -39,7 +39,7 @@ function extendProps(props){
   return res
 }
 
-function getNormalizedTagName(tagName) {
+function getNormalizedTagName(tagName) {  
   var normalizedTagName;
   if (typeof tagName === 'string') {
     normalizedTagName = tagName;  
@@ -47,7 +47,8 @@ function getNormalizedTagName(tagName) {
     normalizedTagName = tagName.join('+');
   } else {
     throw new Error('Unsupported tag name type');
-  } 
+  }
+  //console.log(`Normalized name >${normalizedTagName}<` ); 
   return normalizedTagName; 
 }
 
@@ -70,29 +71,37 @@ function collectContextProps(context, props) {
 ConfigManager.prototype.collectContext = function collectContext(context, appName, tags) {
   var self = this;
   tags.forEach(function(name){
-    console.log(`Collecting ${name}`);
-    collectContextProps(context, self.apps[appName].tags[name])
+    //console.log(`Collecting ${name}`);
+    if (name) {
+      collectContextProps(context, self.apps[appName].tags[name])
+    }
   });
 }
 
-function resolveVar(name, context){
-  console.log(`Resolving var ${name}`);
+function resolveVar(name, context, unresolved){
+  //console.log(`Resolving var ${name}`);
   var curr = context[name];
   if (!curr.isTemplate) {
-    console.log(`Not a template returning ${curr.value}`);
+    //console.log(`Not a template returning ${curr.value}`);
     return curr.value;
   } else {
     var intContext = {};
     //check deps
-    console.log('Var is a template checking dependencies');
+    //console.log('Var is a template checking dependencies');
     curr.dependsOn.forEach(function(depName){
-      console.log(`Checking dep ${depName}`);
+      //console.log(`Checking dep ${depName}`);
       var dep = context[depName];
-      if (dep.isTemplate) {
-        dep.value = resolveVar(depName, context);
-        dep.isTemplate = false;
+      if (typeof dep === 'undefined') { //this is a missing dependency
+        unresolved.push(depName);
+        intContext[depName] = '_UNRESOLVED_';
+      } else {
+        if (dep.isTemplate) {
+          dep.value = resolveVar(depName, context, unresolved);
+          dep.isTemplate = false;
+        }
+        intContext[depName] = dep.value;      
       }
-      intContext[depName] = dep.value;
+
     });
     var template = Handlebars.compile(curr.value);
     //curr.value = template(context);
@@ -103,21 +112,20 @@ function resolveVar(name, context){
 
 ConfigManager.prototype.getConfig = function getConfig(appName, tags){
   var app = this.apps[appName];
-  var res = {name: appName, vars: {}};
+  var res = {name: appName, vars: {}, unresolvedVars: []};
   var context = {};
   collectContextProps(context, app.props);
   this.collectContext(context, appName, tags);
   this.collectContext(context, appName, [getNormalizedTagName(tags)]);
-  console.log(JSON.stringify(context, null, 2));
+  //console.log(JSON.stringify(context, null, 2));
   
   Object.keys(app.props).forEach(function(name){
     context[name] = app.props[name];
-    res.vars[name] = resolveVar(name, context);
-    console.log(JSON.stringify(res.vars[name], null, 2));
+    res.vars[name] = resolveVar(name, context, res.unresolvedVars);
+    //console.log(JSON.stringify(res.vars[name], null, 2));
   });
   
   //console.log(JSON.stringify(context, null, 2));
-   
   return res; 
 }
 
