@@ -120,23 +120,29 @@ function resolveVar(name, context, unresolved){
 }
 
 ConfigManager.prototype.getConfig = function getConfig(appName, tags){
-  var app = this.apps[appName];
-  var res = {name: appName, vars: {}, unresolvedVars: []};
-  var context = {};
-  collectContextProps(context, app.props);
-  this.collectContext(context, appName, tags);
-  this.collectContext(context, appName, [getNormalizedTagName(tags)]);
-  //console.log(JSON.stringify(context, null, 2));
-  
-  Object.keys(app.props).forEach(function(name){
-    context[name] = app.props[name];
-    res.vars[name] = resolveVar(name, context, res.unresolvedVars);
-    //console.log(JSON.stringify(res.vars[name], null, 2));
+  var self = this
+  return new Promise(function(resolve, reject){
+    var app = self.apps[appName];
+    var res = {name: appName, vars: {}, unresolvedVars: []};
+    var context = {};
+    collectContextProps(context, app.props);
+    self.collectContext(context, appName, tags);
+    self.collectContext(context, appName, [getNormalizedTagName(tags)]);
+    //console.log(JSON.stringify(context, null, 2));
+    
+    Object.keys(app.props).forEach(function(name){
+      context[name] = app.props[name];
+      res.vars[name] = resolveVar(name, context, res.unresolvedVars);
+      //console.log(JSON.stringify(res.vars[name], null, 2));
+    });
+    
+    if (res.unresolvedVars.length > 0) {
+      return reject(new UnresolvedVariablesError("Can't resolve variables", res.unresolvedVars));
+    }
+    //console.log(JSON.stringify(context, null, 2));
+    //res.fullyResolved = res.unresolvedVars.length === 0;
+    resolve(res); 
   });
-  
-  //console.log(JSON.stringify(context, null, 2));
-  res.fullyResolved = res.unresolvedVars.length === 0;
-  return res; 
 }
 
 module.exports = {

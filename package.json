@@ -12,7 +12,8 @@
   "author": "intenter <int@intenter.org> (https://github.com/intenter)",
   "license": "ISC",
   "devDependencies": {
-    "chai": "^3.5.0"
+    "chai": "^3.5.0",
+    "chai-as-promised": "^5.2.0"
   },
   "dependencies": {
     "handlebars": "^4.0.5"
