@@ -61,6 +61,12 @@ describe('Config manager', function(){
     ]);    
   });
   
+  it('should work with any tags order', function(){
+    return expect(cm.getConfig('App2', ['prod', 'asia']))
+      .to.eventually.have.deep.property('vars.config')
+      .equal('Region: asia, Env: prod, DB: asia_prod_db');
+  });
+  
   describe('should report unresolved vars', function(){
     it('one level deep', function(){
       return expect(cm.getConfig('App2', []))
@@ -99,13 +105,26 @@ describe('Config manager', function(){
         .and.have.property('conflictedTags')
           .that.has.same.members(['tag1', 'tag2']);
     });
+    
+    it('with multi tag', function(){
+      cm.setApp('AppCnflt3', {'config': '{{value}}'});
+      cm.setTag('AppCnflt3', 'tag1', {value: 'value1'});
+      cm.setTag('AppCnflt3', 'tag2', {});
+      cm.setTag('AppCnflt3', ['tag1', 'tag2'], {value: 'value2'});
+      return expect(cm.getConfig('AppCnflt3', ['tag1', 'tag2']))
+        .to.be.rejected.and.eventually
+        .and.be.an.instanceOf(VariablesConflictError)
+        .and.include({conflictedVar: 'value'})
+        .and.have.property('conflictedTags')
+          .that.has.same.members(['tag1', 'tag1+tag2']);
+    });
 
     it('two levels deep', function(){
-      cm.setApp('AppCnflt', {'config': '{{value}}'});
-      cm.setTag('AppCnflt', 'tag1', {value: '{{nestedValue}}'});
-      cm.setTag('AppCnflt', 'tagNested1', {nestedValue: 'value1'});
-      cm.setTag('AppCnflt', 'tagNested2', {nestedValue: 'value2'});
-      return expect(cm.getConfig('AppCnflt', ['tagNested1', 'tag1', 'tagNested2']))
+      cm.setApp('AppCnflt2', {'config': '{{value}}'});
+      cm.setTag('AppCnflt2', 'tag1', {value: '{{nestedValue}}'});
+      cm.setTag('AppCnflt2', 'tagNested1', {nestedValue: 'value1'});
+      cm.setTag('AppCnflt2', 'tagNested2', {nestedValue: 'value2'});
+      return expect(cm.getConfig('AppCnflt2', ['tagNested1', 'tag1', 'tagNested2']))
         .to.be.rejected.and.eventually
         .and.be.an.instanceOf(VariablesConflictError)
         .and.include({conflictedVar: 'nestedValue'})

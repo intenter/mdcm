@@ -62,7 +62,7 @@ function getNormalizedTagName(tagName) {
   if (typeof tagName === 'string') {
     normalizedTagName = tagName;  
   } else if (Array.isArray(tagName)) {
-    normalizedTagName = tagName.join('+');
+    normalizedTagName = tagName.slice().sort().join('+');
   } else {
     throw new Error('Unsupported tag name type');
   }
