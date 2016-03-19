@@ -1,4 +1,5 @@
-var cm = require('../cmj.js');
+ConfigManager = require('../cmj.js').ConfigManager; 
+var cm = new ConfigManager();
 var expect = require('chai').expect;
 
 describe('Config manager', function(){

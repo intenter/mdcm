@@ -12,6 +12,15 @@ NamesScanner.prototype.MustacheStatement = function(statement) {
   Visitor.prototype.MustacheStatement.call(this, statement);
 };
 
+//Define some errors
+function UnresolvedVariablesError(message, unresolvedVars) {
+  this.name = 'UnresolvedVariablesError';
+  this.message = message;
+  this.unresolvedVars = unresolvedVars;
+}
+UnresolvedVariablesError.prototype = Object.create(Error.prototype);
+UnresolvedVariablesError.prototype.constructor = UnresolvedVariablesError;
+
 //Config Manager itself
 function ConfigManager(){
   this.apps = {};
@@ -130,4 +139,7 @@ ConfigManager.prototype.getConfig = function getConfig(appName, tags){
   return res; 
 }
 
-module.exports = new ConfigManager();
+module.exports = {
+  ConfigManager: ConfigManager,
+  UnresolvedVariablesError: UnresolvedVariablesError
+}
