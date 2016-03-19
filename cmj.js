@@ -21,6 +21,15 @@ function UnresolvedVariablesError(message, unresolvedVars) {
 UnresolvedVariablesError.prototype = Object.create(Error.prototype);
 UnresolvedVariablesError.prototype.constructor = UnresolvedVariablesError;
 
+function VariablesConflictError(message, conflictedVar, conflictedTags) {
+  this.name = 'VariablesConflictError';
+  this.message = message;
+  this.conflictedVar = conflictedVar;
+  this.conflictedTags = conflictedTags;
+}
+VariablesConflictError.prototype = Object.create(Error.prototype);
+VariablesConflictError.prototype.constructor = VariablesConflictError;
+
 //Config Manager itself
 function ConfigManager(){
   this.apps = {};
@@ -66,14 +75,21 @@ ConfigManager.prototype.setTag = function setTag(appName, tagName, tagProps) {
   app.tags[getNormalizedTagName(tagName)] = extendProps(tagProps);  
 }
 
-function collectContextProps(context, props) {
+function collectContextProps(context, props, sourceName) {
     Object.keys(props).forEach(function (variable){
       var varValue = props[variable];
-      context[variable] = {
-        value: varValue.value,
-        dependsOn: varValue.dependsOn,
-        isTemplate: varValue.isTemplate
-      };
+      var existingVar = context[variable];
+      if (existingVar) { //var already exists
+        console.log("Conflict for " + variable+": " + existingVar.source + " vs " + sourceName);
+        throw new VariablesConflictError('Variables Conflict', variable, [existingVar.source, sourceName])
+      } else { //new var
+        context[variable] = {
+          value: varValue.value,
+          dependsOn: varValue.dependsOn,
+          isTemplate: varValue.isTemplate,
+          source: sourceName
+        };
+      }
     });
 }
 
@@ -82,7 +98,7 @@ ConfigManager.prototype.collectContext = function collectContext(context, appNam
   tags.forEach(function(name){
     //console.log(`Collecting ${name}`);
     if (name) {
-      collectContextProps(context, self.apps[appName].tags[name])
+      collectContextProps(context, self.apps[appName].tags[name], name)
     }
   });
 }
@@ -127,7 +143,9 @@ ConfigManager.prototype.getConfig = function getConfig(appName, tags){
     var context = {};
     collectContextProps(context, app.props);
     self.collectContext(context, appName, tags);
-    self.collectContext(context, appName, [getNormalizedTagName(tags)]);
+    if (tags.length >= 2){
+      self.collectContext(context, appName, [getNormalizedTagName(tags)]);
+    }
     //console.log(JSON.stringify(context, null, 2));
     
     Object.keys(app.props).forEach(function(name){
@@ -147,5 +165,6 @@ ConfigManager.prototype.getConfig = function getConfig(appName, tags){
 
 module.exports = {
   ConfigManager: ConfigManager,
-  UnresolvedVariablesError: UnresolvedVariablesError
+  UnresolvedVariablesError: UnresolvedVariablesError,
+  VariablesConflictError: VariablesConflictError
 }
