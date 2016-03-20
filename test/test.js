@@ -125,11 +125,21 @@ describe('Config manager', function(){
       cm.setTag('AppCnflt2', 'tagNested1', {nestedValue: 'value1'});
       cm.setTag('AppCnflt2', 'tagNested2', {nestedValue: 'value2'});
       return expect(cm.getConfig('AppCnflt2', ['tagNested1', 'tag1', 'tagNested2']))
-        .to.be.rejected.and.eventually
+        .to.be.rejected.eventually
         .and.be.an.instanceOf(VariablesConflictError)
         .and.include({conflictedVar: 'nestedValue'})
         .and.have.property('conflictedTags')
           .that.has.same.members(['tagNested1', 'tagNested2']);
+    });
+    
+    it('with the app', function(){
+      cm.setApp('AppCnflt4', {config: '{{value}}', value: 'appValue'});
+      cm.setTag('AppCnflt4', 'tag', {value: 'tagValue'});
+      return expect(cm.getConfig('AppCnflt4', ['tag']))
+        .to.be.rejected.eventually
+        .and.include({conflictedVar: 'value'})
+        .and.have.property('conflictedTags')
+          .that.has.same.members(['tag', 'AppCnflt4']);
     });
   });
   

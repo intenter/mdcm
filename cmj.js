@@ -80,7 +80,7 @@ function collectContextProps(context, props, sourceName) {
       var varValue = props[variable];
       var existingVar = context[variable];
       if (existingVar) { //var already exists
-        console.log("Conflict for " + variable+": " + existingVar.source + " vs " + sourceName);
+        //console.log("Conflict for " + variable+": " + existingVar.source + " vs " + sourceName);
         throw new VariablesConflictError('Variables Conflict', variable, [existingVar.source, sourceName])
       } else { //new var
         context[variable] = {
@@ -141,7 +141,7 @@ ConfigManager.prototype.getConfig = function getConfig(appName, tags){
     var app = self.apps[appName];
     var res = {name: appName, vars: {}, unresolvedVars: []};
     var context = {};
-    collectContextProps(context, app.props);
+    collectContextProps(context, app.props, appName);
     self.collectContext(context, appName, tags);
     if (tags.length >= 2){
       self.collectContext(context, appName, [getNormalizedTagName(tags)]);
